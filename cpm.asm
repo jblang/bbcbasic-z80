@@ -28,9 +28,6 @@
 	PUBLIC	OSKEY
 	PUBLIC	OSCALL
 ;
-	EXTERN	BYE
-	EXTERN	GETKEY
-;
 	EXTERN	ESCAPE
 	EXTERN	EXTERR
 	EXTERN	CHECK
@@ -42,8 +39,6 @@
 	EXTERN	HIMEM
 	EXTERN	ERRLIN
 	EXTERN	USER
-;
-	SECTION	CODE
 ;
 ;OSSAVE - Save an area of memory to a file.
 ;   Inputs: HL addresses filename (term CR)
@@ -1045,11 +1040,6 @@ PTEXT:	LD	A,(HL)
 	DJNZ	PTEXT
 	RET
 ;
-BADSUM:	CALL	TELL
-	DEFM	"Bad sum"
-	DEFB	0
-	JP	BYE
-;
 ;OSINIT - Initialise RAM mapping etc.
 ;If BASIC is entered by BBCBASIC FILENAME then file
 ;FILENAME.BBC is automatically CHAINed.
@@ -1061,19 +1051,6 @@ BADSUM:	CALL	TELL
 OSINIT:	LD	C,45		;*
 	LD	E,254		;*
 	CALL	BDOS		;*
-;	LD	BC,SUMFIX+2-200H
-;	LD	HL,200H
-;	XOR	A
-;	LD	E,A
-;SUM:	ADD	A,(HL)
-;	LD	D,E
-;	LD	E,A
-;	LD	A,D
-;	ADC	A,0
-;	CPI
-;	JP	PE,SUM
-;	OR	E
-;	JR	NZ,BADSUM
 	LD	B,INILEN
 	LD	HL,TABLE
 CLRTAB:	LD	(HL),A		;CLEAR FILE TABLE ETC.
@@ -1092,6 +1069,10 @@ NOBOOT:	EX	DE,HL
 	LD	E,A		;PAGE BOUNDARY
 	LD	HL,USER
 	RET
+;
+;BYE - Stop interrupts and return to CP/M. 
+;
+BYE:	RST	0
 ;
 ;
 ;TRAP - Test ESCAPE flag and abort if set;
@@ -1196,6 +1177,34 @@ ESCSET:	PUSH	HL
 ESCDIS:	POP	HL
 	RET
 ;
+;GETKEY - Sample keyboard with specified wait.
+;   Inputs: HL = Time to wait (centiseconds)
+;  Outputs: Carry reset indicates time-out.
+;           If carry set, A = character typed.
+; Destroys: A,D,E,H,L,F
+;
+GETKEY:	PUSH	BC
+	PUSH	HL
+	LD	C,6
+	LD	E,0FFH
+	CALL	BDOS		;CONSOLE INPUT
+	POP	HL
+	POP	BC
+	OR	A
+	SCF
+	RET	NZ		;KEY PRESSED
+	OR	H
+	OR	L
+	RET	Z		;TIME-OUT
+	PUSH	HL
+	LD	HL,TIME
+	LD	A,(HL)
+WAIT1:	CP	(HL)
+	JR	Z,WAIT1		;WAIT FOR 10 ms.
+	POP	HL
+	DEC	HL
+	JR	GETKEY
+;
 ;OSWRCH - Write a character to console output.
 ;   Inputs: A = character.
 ; Destroys: Nothing
@@ -1261,7 +1270,7 @@ TOGGLE:	LD	A,(FLAGS)
 ;           A=0.
 ; Destroys: A,B,C,D,E,H,L,F
 ;
-OSLINE:	LD	IX,200H
+OSLINE:	LD	IX,KEYS
 	LD	A,(FLAGS)
 	BIT	3,A		;EDIT MODE?
 	JR	Z,OSLIN1
@@ -1442,7 +1451,20 @@ STOP:	LD	C,0		;STOP REPEAT
 EDITST:	DEFM	"EDIT"
 LISTST:	DEFM	"LIST"
 ;
-SUMFIX:	DEFS	2
+; keyboard definitions
+	DEFB	80		;WIDTH
+	DEFB	'E' & 1FH	;CURSOR UP
+	DEFB	'X' & 1FH	;CURSOR DOWN
+	DEFB	'A' & 1FH	;START OF LINE
+	DEFB	'F' & 1FH	;END OF LINE
+	DEFB	'T' & 1FH	;DELETE TO END OF LINE
+	DEFB	7FH		;BACKSPACE & DELETE
+	DEFB	'U' & 1FH	;CANCEL LINE
+	DEFB	'S' & 1FH	;CURSOR LEFT
+	DEFB	'D' & 1FH	;CURSOR RIGHT
+	DEFB	'G' & 1FH	;DELETE CHARACTER
+	DEFB	'V' & 1FH	;INSERT CHARACTER
+KEYS:
 ;
 BEL	EQU	7
 BS	EQU	8
@@ -1459,6 +1481,8 @@ FCB	EQU	5CH
 DSKBUF	EQU	80H
 ;
 FCBSIZ	EQU	128+36+2
+;
+TIME:	DEFS	4
 ;
 TRPCNT:	DEFB	10
 TABLE:	DEFS	16		;FILE BLOCK POINTERS

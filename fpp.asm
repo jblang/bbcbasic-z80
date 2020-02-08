@@ -32,8 +32,6 @@ EXPRNG	EQU	24		;Exp range
 ;
 	PUBLIC	FPP
 ;
-	SECTION	CODE
-;
 ;Call entry and despatch code:
 ;
 FPP:	PUSH	IY		;Save IY
