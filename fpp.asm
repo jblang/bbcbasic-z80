@@ -1,4 +1,4 @@
-	TITLE	'(C) COPYRIGHT R.T.RUSSELL 1986'
+;	TITLE	'(C) COPYRIGHT R.T.RUSSELL 1986'
 ;
 ;Z80 FLOATING POINT PACKAGE
 ;(C) COPYRIGHT  R.T.RUSSELL  1986
@@ -30,7 +30,9 @@ LOGRNG	EQU	22		;Log range
 ACLOST	EQU	23		;Accuracy lost
 EXPRNG	EQU	24		;Exp range
 ;
-	GLOBAL	FPP
+	PUBLIC	FPP
+;
+	SECTION	CODE
 ;
 ;Call entry and despatch code:
 ;
@@ -142,8 +144,6 @@ RTABLE:	DEFW	FAND		;AND (FLOATING-POINT)
 	DEFW	FSUB		;-
 	DEFW	FPOW		;^
 	DEFW	FDIV		;/
-;
-	PAGE
 ;
 ;ARITHMETIC AND LOGICAL OPERATORS:
 ;All take two arguments, in HLH'L'C & DED'E'B.
@@ -525,7 +525,7 @@ IPOW3:	PUSH	BC
 	RL	E
 	RL	D
 	PUSH	DE
-	LD	A,'*' AND 0FH
+	LD	A,'*' & 0FH
 	PUSH	AF
 	CALL	COPY
 	CALL	OP		;SQUARE
@@ -619,8 +619,6 @@ TRUE:	LD	HL,-1
 	XOR	A
 	LD	C,A
 	RET
-;
-	PAGE
 ;
 ;FUNCTIONS:
 ;
@@ -1405,8 +1403,6 @@ STR43:	DJNZ	STR42
 STR47:	INC	HL
 STR44:	EX	DE,HL
 	RET
-;
-	PAGE
 ;
 ;Support subroutines:
 ;
@@ -2237,6 +2233,3 @@ SIGNQ:	LD	A,(IX)
 	RET	Z
 	DEC	IX
 	RET
-;
-	END
-
